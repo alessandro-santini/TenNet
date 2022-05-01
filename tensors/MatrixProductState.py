@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import opt_einsum as oe
 import copy
 
@@ -10,6 +11,7 @@ class MPS:
             self.center = -1
             self.dtype = dtype
             self.initialize(tensors)
+            self.singular_values = [0]*(self.L-1)
             
         def initialize(self,tensors):
             if tensors is None:
@@ -33,14 +35,15 @@ class MPS:
                 S, U, V = tf.linalg.svd(tf.reshape(self.tensors[i], (shpi[0]*shpi[1], shpi[2])  )  )
                 S /= tf.linalg.norm(S); S = tf.cast(S,self.dtype)
                 self.tensors[i] = tf.reshape(U, (shpi[0], shpi[1], S.shape[0]))
-                self.tensors[i+1] = tf.einsum('i,ij,jkl->ikl',S,tf.linalg.adjoint(V), self.tensors[i+1])
-                
+                self.tensors[i+1] = oe.contract('i,ij,jkl->ikl',S,tf.linalg.adjoint(V), self.tensors[i+1])
+                self.singular_values[i] = S
             else:
                 self.center = i-1
                 S, U, V = tf.linalg.svd( tf.reshape(self.tensors[i],(shpi[0],shpi[1]*shpi[2]) ) )
                 S /= tf.linalg.norm(S); S = tf.cast(S,self.dtype)
                 self.tensors[i] = tf.reshape(tf.linalg.adjoint(V),(S.shape[0],shpi[1],shpi[2]))
-                self.tensors[i-1] = tf.einsum('ij,j,jkl->ikl',U,S,self.tensors[i-1])
+                self.tensors[i-1] = oe.contract('ij,j,kli->klj',U,S,self.tensors[i-1])
+                self.singular_values[i-1] = S
                 
         def left_normalize(self):
             self.center = 0
@@ -50,13 +53,28 @@ class MPS:
             S, U, V = tf.linalg.svd( tf.reshape(self.tensors[-1],(shp[0]*shp[1],shp[2])))
             S /= tf.linalg.norm(S); S = tf.cast(S,self.dtype)
             self.tensors[-1] = tf.reshape(tf.matmul(U, tf.matmul(tf.linalg.diag(S),V, adjoint_b=True)),shp)
+        def right_normalize(self):
+            self.center=self.L-1
+            for i in range(self.L-1,0,-1):
+                self.move_center_one_step(i,direction='left')
+            shp = self.tensors[0].shape
+            S, U, V = tf.linalg.svd( tf.reshape(self.tensors[0],(shp[0]*shp[1],shp[2])))
+            S /= tf.linalg.norm(S); S = tf.cast(S,self.dtype)
+            self.tensors[0] = tf.reshape(tf.matmul(U, tf.matmul(tf.linalg.diag(S),V, adjoint_b=True)),shp)
             
         def compute_normalization(self):
             L_env = tf.ones((1,1), dtype=self.dtype)
             for i in range(self.L):
                 L_env = oe.contract('ij,ikl,jkm->lm', L_env,self.tensors[i],tf.math.conj(self.tensors[i]))
             return L_env.numpy().item()
-            
-psi = MPS(10,2,64)
-psi.left_normalize()
-print(psi.compute_normalization())
+        
+        def compute_entanglement_entropy(self):
+            Sent = np.zeros(self.L-1,dtype=np.float64)
+            for i,x in enumerate(self.singular_values):
+                Sent[i] = -tf.math.reduce_sum(x**2*tf.math.log(x**2)).numpy()
+            return Sent
+        
+psi = MPS(100,2,64)
+psi.right_normalize()
+
+
