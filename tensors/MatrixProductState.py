@@ -71,6 +71,7 @@ class MPS:
         def compute_entanglement_entropy(self):
             Sent = np.zeros(self.L-1,dtype=np.float64)
             for i,x in enumerate(self.singular_values):
+                x = x[x>1e-15]
                 Sent[i] = -tf.math.reduce_sum(x**2*tf.math.log(x**2)).numpy()
             return Sent
         

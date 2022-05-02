@@ -1,4 +1,4 @@
-from ..tensors import MatrixProductOperators as MPO
+from ..tensors.MatrixProductOperators import MPO
 import tensorflow as tf
 import numpy as np
 
@@ -25,5 +25,5 @@ def IsingChain(L, J=1., h_z=1., h_x=0.):
         tensors.append(Wbulk)
     tensors.append(WR)
     tensors = list(map(tf.convert_to_tensor,tensors))
-    return MPO.MPO(L, d=2, tensors = tensors)
+    return MPO(L, d=2, tensors = tensors)
     
