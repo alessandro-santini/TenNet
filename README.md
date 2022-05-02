@@ -1,3 +1,3 @@
 # TenNet
 
-TensorNetwork package based on tensorflow 
+TensorNetwork package
