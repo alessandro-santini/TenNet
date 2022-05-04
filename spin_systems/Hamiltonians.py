@@ -1,11 +1,10 @@
 from ..tensors.MatrixProductOperators import MPO
-import tensorflow as tf
 import numpy as np
 
 def IsingChain(L, J=1., h_z=1., h_x=0.):    
-    if isinstance(J,float):   J = J*np.ones(L)
-    if isinstance(h_x,float): h_x = h_x*np.ones(L)
-    if isinstance(h_z,float): h_z = h_z*np.ones(L)
+    if isinstance(J,(int,float)):   J = J*np.ones(L)
+    if isinstance(h_x,(int,float)): h_x = h_x*np.ones(L)
+    if isinstance(h_z,(int,float)): h_z = h_z*np.ones(L)
     
     tensors = []
     
@@ -24,6 +23,5 @@ def IsingChain(L, J=1., h_z=1., h_x=0.):
         Wbulk[2,1,:,:] = -J[i]*sigma_x; Wbulk[2,2,:,:] = np.eye(2)
         tensors.append(Wbulk)
     tensors.append(WR)
-    tensors = list(map(tf.convert_to_tensor,tensors))
     return MPO(L, d=2, tensors = tensors)
     

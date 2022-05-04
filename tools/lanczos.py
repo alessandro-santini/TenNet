@@ -1,5 +1,5 @@
 import numpy as np
-import tensorflow as tf
+from scipy.linalg import orth 
 import warnings
 
 def lanczos_iteration(Afunc, vstart, numiter, ortho_info=False):
@@ -20,10 +20,10 @@ def lanczos_iteration(Afunc, vstart, numiter, ortho_info=False):
     assert nrmv > 0
     vstart = vstart / nrmv
 
-    alpha = np.zeros(numiter,dtype=np.float64)
-    beta  = np.zeros(numiter-1,dtype=np.float64)
+    alpha = np.zeros(numiter)
+    beta  = np.zeros(numiter-1)
 
-    V = np.zeros((numiter, len(vstart)), dtype=np.float64)
+    V = np.zeros((numiter, len(vstart)), dtype=complex)
     V[0] = vstart
 
     for j in range(numiter-1):
