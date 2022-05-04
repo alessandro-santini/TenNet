@@ -31,6 +31,10 @@ class DMRG:
             self.R_env[j] = contract.contract_right(self.psi.tensors[j], self.H.tensors[j], self.psi.tensors[j], self.R_env[j+1])
         if self.sites == 2:
             self.H12 = [oe.contract('ijkl,jabc->iakblc',self.H.tensors[i],self.H.tensors[i+1]) for i in range(self.L-1)]
+
+    ###########################
+    # Single site dmrg sweeps #
+    ###########################
     def right_sweep_single_site(self):
         for i in range(self.L-1):
             assert self.psi.center == i
@@ -47,7 +51,10 @@ class DMRG:
             self.psi.tensors[i] = psi.reshape(shp); self.energy = e
             self.psi.move_center_one_step(i, direction='left')
             self.R_env[i] = contract.contract_right(self.psi.tensors[i], self.H.tensors[i], self.psi.tensors[i], self.R_env[i+1])
-    
+
+    ###########################
+    #  Two sites dmrg sweeps  #
+    ###########################    
     def right_sweep_two_sites(self):
         for i in range(self.L-1):
             assert self.psi.center == i
