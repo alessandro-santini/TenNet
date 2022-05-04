@@ -100,12 +100,12 @@ class DMRG:
         
 def apply_Heff_single_site(L,H,R,M):
     return oe.contract('adf,decg,beh,acb->fgh',L,H,R,M)
-def local_minimization_single_site(M, L, H, R, Lsteps=10):
+def local_minimization_single_site(M, L, H, R, numiter=10):
     Afunc = lambda x: apply_Heff_single_site(L, H, R, x.reshape(M.shape)).ravel()
-    return lanczos.optimize_lanczos(Afunc, M.ravel(), Lsteps)
+    return lanczos.optimize_lanczos(Afunc, M.ravel(), numiter)
 
 def apply_Heff_two_sites(L,H12,R,M12):
     return oe.contract('ijk,jalmbc,nad,ilmn->kbcd',L,H12,R,M12)
-def local_minimization_two_sites(M12, L, H12, R, Lsteps=10):
+def local_minimization_two_sites(M12, L, H12, R, numiter=10):
     Afunc = lambda x: apply_Heff_two_sites(L, H12, R, x.reshape(M12.shape)).ravel()
-    return lanczos.optimize_lanczos(Afunc, M12.ravel(), Lsteps)
+    return lanczos.optimize_lanczos(Afunc, M12.ravel(), numiter)
