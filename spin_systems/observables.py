@@ -1,6 +1,7 @@
 from ..tools.contract import compute_local_operator
 import numpy as np
 import copy
+import opt_einsum as oe
 
 def local_mz(psi):
     sigma_z = np.array([[1.,0.],[0.,-1.]], complex)
@@ -22,5 +23,8 @@ def compute_corr_function(psi,i,j,opi,opj):
     while psi_temp.center < i:
         ic = psi_temp.center
         psi_temp.move_center_one_step(ic, 'right')
-    
-    
+
+    corr_ = oe.contract('ijk,jl,ilm->mk', psi_temp.tensors[i], opi, psi_temp.tensors[i].conj())
+    for x in range(i+1,j):
+        corr_ = oe.contract('ij,ikl,jkm->lm',corr_, psi_temp.tensors[x],  psi_temp.tensors[x].conj() )
+    return oe.contract('ij,ikl,km,jml',corr_, psi_temp.tensors[j], opj, psi_temp.tensors[j].conj() )
