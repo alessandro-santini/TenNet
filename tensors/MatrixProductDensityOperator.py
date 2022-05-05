@@ -3,7 +3,7 @@ import opt_einsum as oe
 import copy
 import IOhdf5
 
-class MPS:
+class MPDO:
         def __init__(self, L, d=2, chi=64, tensors=None):
             self.L = L
             self.chi = chi
@@ -15,7 +15,7 @@ class MPS:
         def initialize(self,tensors):
             if tensors is None:
                 chi_space = [1]+[self.chi]*(self.L-1)+[1]
-                self.tensors = [np.random.rand(chi_space[i],self.d,chi_space[i+1]) for i in range(self.L)]
+                self.tensors = [np.random.rand(chi_space[i],self.d,self.d,chi_space[i+1]) for i in range(self.L)]
             else:
                 self.tensors = copy.deepcopy(tensors)
                 
@@ -26,11 +26,12 @@ class MPS:
             shpi = self.tensors[i].shape
             if direction == 'right':
                 self.center = i+1
-                U, S, V = np.linalg.svd( self.tensors[i].reshape(shpi[0]*shpi[1], shpi[2]), full_matrices=False )
+                U, S, V = np.linalg.svd( self.tensors[i].reshape(shpi[0]*shpi[1]*shpi[2], shpi[3]), full_matrices=False )
                 S /= np.linalg.norm(S);
-                self.tensors[i] = U.reshape(shpi[0], shpi[1], S.shape[0])
-                self.tensors[i+1] = oe.contract('i,ij,jkl->ikl', S, V, self.tensors[i+1])
+                self.tensors[i] = U.reshape(shpi[0], shpi[1], shpi[2], S.shape[0])
+                self.tensors[i+1] = oe.contract('i,ij,jkml->ikml', S, V, self.tensors[i+1])
                 self.singular_values[i] = S
+                # RIVISTO FINO A QUAGGIU'
             else:
                 self.center = i-1
                 U, S, V = np.linalg.svd( self.tensors[i].reshape(shpi[0],shpi[1]*shpi[2]),full_matrices=False ) 
@@ -79,7 +80,7 @@ class MPS:
         
         def update_bonds_infos(self):
             self.bonds_infos = [([x.shape[0],x.shape[1]],max([x.shape[0],x.shape[1]])) for x in self.tensors]
-        
+            
         def save(self, file_pointer, subgroup):
             IOhdf5.save_hdf5(self, file_pointer, subgroup)
         def load(self, file_pointer, subgroup):
