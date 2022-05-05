@@ -13,12 +13,13 @@ class DMRG:
         self.psi = psi
         self.sites = options.get('sites', 1)
         if 'trunc_cut' not in self.options.keys(): self.options.update({'trunc_cut':1e-10})
+        if 'chi_init' not in self.options.keys(): self.options.update({'chi_init':64})
         self.initialize()
         
     def initialize(self):
         if self.psi is None:
             if self.sites == 1: self.psi = MPS(self.L,self.H.d,chi=self.options['chi_max']) 
-            if self.sites == 2: self.psi = MPS(self.L,self.H.d,chi=32) 
+            if self.sites == 2: self.psi = MPS(self.L,self.H.d,chi=self.options['chi_init']) 
         self.psi.left_normalize()
         self.psi.right_normalize()
         
@@ -39,7 +40,12 @@ class DMRG:
             Hsquared[i] = oe.contract('ijkl,mnlo->imjnko',self.H.tensors[i],self.H.tensors[i]).reshape(shpH[0]**2,shpH[1]**2,shpH[2],shpH[3])
         self.Hsquared = MPO(self.L,tensors=Hsquared)
     def check_convergence(self):
-        return self.Hsquared.contractMPOtoMPS(self.psi).real-self.energy**2
+        try:
+            self.energy_err = self.Hsquared.contractMPOtoMPS(self.psi).real-self.energy**2
+        except:
+            self.energy = self.H.contractMPOtoMPS(self.psi)
+            self.energy_err = self.Hsquared.contractMPOtoMPS(self.psi).real-self.energy**2
+        return self.energy_err
     ###########################
     # Single site dmrg sweeps #
     ###########################
