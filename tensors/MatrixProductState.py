@@ -37,7 +37,15 @@ class MPS:
                 self.tensors[i] = V.reshape(S.shape[0],shpi[1],shpi[2])
                 self.tensors[i-1] = oe.contract('ij,j,kli->klj',U,S,self.tensors[i-1])
                 self.singular_values[i-1] = S
-                
+        
+        def set_center(self,i):
+            while self.center > i:
+                ic = self.center
+                self.move_center_one_step(ic, 'left')    
+            while self.center < i:
+                ic = self.center
+                self.move_center_one_step(ic, 'right')
+        
         def left_normalize(self):
             self.center = 0
             for i in range(self.L-1):
