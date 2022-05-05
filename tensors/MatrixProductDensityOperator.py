@@ -1,7 +1,7 @@
 import numpy as np
 import opt_einsum as oe
 import copy
-import IOhdf5
+from . import IOhdf5
 
 class MPDO:
         def __init__(self, L, d=2, chi=64, tensors=None):
@@ -31,13 +31,12 @@ class MPDO:
                 self.tensors[i] = U.reshape(shpi[0], shpi[1], shpi[2], S.shape[0])
                 self.tensors[i+1] = oe.contract('i,ij,jkml->ikml', S, V, self.tensors[i+1])
                 self.singular_values[i] = S
-                # RIVISTO FINO A QUAGGIU'
             else:
                 self.center = i-1
-                U, S, V = np.linalg.svd( self.tensors[i].reshape(shpi[0],shpi[1]*shpi[2]),full_matrices=False ) 
+                U, S, V = np.linalg.svd( self.tensors[i].reshape(shpi[0],shpi[1]*shpi[2]*shpi[3]),full_matrices=False ) 
                 S /= np.linalg.norm(S);
-                self.tensors[i] = V.reshape(S.shape[0],shpi[1],shpi[2])
-                self.tensors[i-1] = oe.contract('ij,j,kli->klj',U,S,self.tensors[i-1])
+                self.tensors[i] = V.reshape(S.shape[0],shpi[1],shpi[2],shpi[3])
+                self.tensors[i-1] = oe.contract('ij,j,kmli->kmlj',U,S,self.tensors[i-1])
                 self.singular_values[i-1] = S
         
         def set_center(self,i):
@@ -53,7 +52,7 @@ class MPDO:
             for i in range(self.L-1):
                 self.move_center_one_step(i,direction='right')
             shp = self.tensors[-1].shape
-            U, S, V = np.linalg.svd(self.tensors[-1].reshape(shp[0]*shp[1],shp[2]),full_matrices=False)
+            U, S, V = np.linalg.svd(self.tensors[-1].reshape(shp[0]*shp[1]*shp[2],shp[3]),full_matrices=False)
             S /= np.linalg.norm(S)
             self.tensors[-1] = oe.contract('ij,j,jk->ik',U,S,V).reshape(shp)
         def right_normalize(self):
@@ -61,14 +60,14 @@ class MPDO:
             for i in range(self.L-1,0,-1):
                 self.move_center_one_step(i,direction='left')
             shp = self.tensors[0].shape
-            U, S, V = np.linalg.svd(self.tensors[0].reshape(shp[0]*shp[1],shp[2]),full_matrices=False)
+            U, S, V = np.linalg.svd(self.tensors[0].reshape(shp[0]*shp[1]*shp[2],shp[3]),full_matrices=False)
             S /= np.linalg.norm(S); 
             self.tensors[0] = oe.contract('ij,j,jk->ik',U,S,V).reshape(shp)
             
         def compute_normalization(self):
             L_env = np.ones((1,1))
             for i in range(self.L):
-                L_env = oe.contract('ij,ikl,jkm->lm', L_env, self.tensors[i], self.tensors[i].conj())
+                L_env = oe.contract('ij,ikal,jkam->lm', L_env, self.tensors[i], self.tensors[i].conj())
             return L_env.item()
         
         def compute_entanglement_entropy(self):
@@ -79,7 +78,7 @@ class MPDO:
             return Sent
         
         def update_bonds_infos(self):
-            self.bonds_infos = [([x.shape[0],x.shape[1]],max([x.shape[0],x.shape[1]])) for x in self.tensors]
+            self.bonds_infos = [([x.shape[0],x.shape[2]],max([x.shape[0],x.shape[2]])) for x in self.tensors]
             
         def save(self, file_pointer, subgroup):
             IOhdf5.save_hdf5(self, file_pointer, subgroup)

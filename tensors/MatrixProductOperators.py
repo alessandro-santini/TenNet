@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 from ..tools import contract
-import IOhdf5
+from . import IOhdf5
 
 class MPO:
     def __init__(self, L, d=2, tensors = None):

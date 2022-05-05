@@ -1,7 +1,7 @@
 import numpy as np
 import opt_einsum as oe
 import copy
-import IOhdf5
+from . import IOhdf5
 
 class MPS:
         def __init__(self, L, d=2, chi=64, tensors=None):
