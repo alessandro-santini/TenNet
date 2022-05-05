@@ -6,7 +6,7 @@ from ..tools import contract, lanczos
 from ..tools.svd_truncate import svd_truncate
 
 class DMRG:
-    def __init__(self, H, options = {'chi_max':64,'trunc_cut':1e-10}, psi = None):
+    def __init__(self, H, options = {'chi_max':64,'trunc_cut':1e-10}, psi = None): 
         self.H = H
         self.L = H.L
         self.options = options
