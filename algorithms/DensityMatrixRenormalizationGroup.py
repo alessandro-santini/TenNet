@@ -46,6 +46,7 @@ class DMRG:
             self.energy = self.H.contractMPOtoMPS(self.psi)
             self.energy_err = self.Hsquared.contractMPOtoMPS(self.psi).real-self.energy**2
         return self.energy_err
+    
     ###########################
     # Single site dmrg sweeps #
     ###########################
@@ -65,7 +66,6 @@ class DMRG:
             self.psi.tensors[i] = psi.reshape(shp); self.energy = e
             self.psi.move_center_one_step(i, direction='left')
             self.R_env[i] = contract.contract_right(self.psi.tensors[i], self.H.tensors[i], self.psi.tensors[i], self.R_env[i+1])
-
     ###########################
     #  Two sites dmrg sweeps  #
     ###########################    
