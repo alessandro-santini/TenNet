@@ -16,7 +16,6 @@ class MPO:
        if(psi.d != self.d): raise Exception('psi MPO local dimensions are different')
        
        R_env = np.ones((1,1,1))
-       
        for i in range(self.L-1,0,-1):
            R_env = contract.contract_right(psi.tensors[i], self.tensors[i], psi.tensors[i], R_env)
        return contract.contract_right(psi.tensors[0], self.tensors[0], psi.tensors[0], R_env).item()

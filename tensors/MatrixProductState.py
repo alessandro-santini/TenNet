@@ -67,3 +67,6 @@ class MPS:
                 x = x[x>1e-15]
                 Sent[i] = -np.sum(x**2*np.log(x**2))
             return Sent
+        
+        def update_bonds_infos(self):
+            self.bonds_infos = [([x.shape[0],x.shape[1]],max([x.shape[0],x.shape[1]])) for x in self.tensors]

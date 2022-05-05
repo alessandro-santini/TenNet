@@ -1,6 +1,7 @@
 import numpy as np
 import opt_einsum as oe
 from ..tensors.MatrixProductState import MPS
+from ..tensors.MatrixProductOperators import MPO
 from ..tools import contract, lanczos
 from ..tools.svd_truncate import svd_truncate
 
@@ -31,7 +32,14 @@ class DMRG:
             self.R_env[j] = contract.contract_right(self.psi.tensors[j], self.H.tensors[j], self.psi.tensors[j], self.R_env[j+1])
         if self.sites == 2:
             self.H12 = [oe.contract('ijkl,jabc->iakblc',self.H.tensors[i],self.H.tensors[i+1]) for i in range(self.L-1)]
-
+        
+        Hsquared = [0]*self.L
+        for i in range(self.L):
+            shpH = self.H.tensors[i].shape
+            Hsquared[i] = oe.contract('ijkl,mnlo->imjnko',self.H.tensors[i],self.H.tensors[i]).reshape(shpH[0]**2,shpH[1]**2,shpH[2],shpH[3])
+        self.Hsquared = MPO(self.L,tensors=Hsquared)
+    def check_convergence(self):
+        return self.Hsquared.contractMPOtoMPS(self.psi).real-self.energy**2
     ###########################
     # Single site dmrg sweeps #
     ###########################
@@ -97,6 +105,7 @@ class DMRG:
             self.truncation_err = np.zeros(self.L-1)
             self.right_sweep_two_sites()
             self.left_sweep_two_sites()
+        self.psi.update_bonds_infos()
         
 def apply_Heff_single_site(L,H,R,M):
     return oe.contract('adf,decg,beh,acb->fgh',L,H,R,M)

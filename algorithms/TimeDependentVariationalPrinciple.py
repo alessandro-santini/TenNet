@@ -3,6 +3,7 @@ import opt_einsum as oe
 from ..tools import contract, lanczos
 from ..tools.svd_truncate import svd_truncate
 import copy
+import warnings
 
 class TDVP:
     def __init__(self, psi, H, options={}):
@@ -17,7 +18,9 @@ class TDVP:
         self.initialize()
         
     def initialize(self):
-        # assert psi is right_normalized ! else normalizzala                   
+        if self.psi.center != 0: 
+            warnings.warn('Initialization: psi was not right normalized')
+            self.psi.right_normalize()
         self.L_env = [0]*(self.L+1)
         self.R_env = [0]*(self.L+1)
         
@@ -29,7 +32,11 @@ class TDVP:
         if self.sites == 2:
             self.H12 = [oe.contract('ijkl,jabc->iakblc',self.H.tensors[i],self.H.tensors[i+1]) for i in range(self.L-1)]
             self.truncation_err = np.zeros(self.L-1)
-        self.initial_energy = self.H.contractMPOtoMPS(self.psi)
+        self.initial_energy = self.energy()
+    def energy(self):
+        return self.H.contractMPOtoMPS(self.psi).real
+    def energy_err(self):
+        return self.energy()-self.initial_energy
     ###########################
     # Single site tdvp sweeps #
     ###########################
@@ -79,7 +86,7 @@ class TDVP:
             if i != self.L-2:
                 self.L_env[i] = contract.contract_left(self.psi.tensors[i], self.H.tensors[i], self.psi.tensors[i], self.L_env[i-1])
                 shp2 = self.psi.tensors[i+1].shape
-                self.psi.tensors[i+1] = local_exponentiation_two_sites('Heff_single', self.psi.tensors[i+1], self.L_env[i], self.H.tensors[i+1], self.R_env[i+2], delta).reshape(shp2)
+                self.psi.tensors[i+1] = local_exponentiation_two_sites('Heff_single', self.psi.tensors[i+1], self.L_env[i], self.H.tensors[i+1], self.R_env[i+2], -delta).reshape(shp2)
     def left_sweep_two_sites(self,delta):
             for i in range(self.L-1,0,-1):
                 assert self.psi.center == i
@@ -93,7 +100,7 @@ class TDVP:
                 if i != 1:
                     self.R_env[i] = contract.contract_right(self.psi.tensors[i],self.H.tensors[i],self.psi.tensors[i],self.R_env[i+1])
                     shp1 = self.psi.tensors[i-1].shape
-                    self.psi.tensors[i-1] = local_exponentiation_two_sites('Heff_single', self.psi.tensors[i-1], self.L_env[i-2], self.H.tensors[i-1], self.R_env[i], delta).reshape(shp1)
+                    self.psi.tensors[i-1] = local_exponentiation_two_sites('Heff_single', self.psi.tensors[i-1], self.L_env[i-2], self.H.tensors[i-1], self.R_env[i], -delta).reshape(shp1)
     def time_step(self,delta):
         if self.sites == 1:
             self.right_sweep_single_site(delta)
@@ -101,6 +108,7 @@ class TDVP:
         if self.sites == 2:
             self.right_sweep_two_sites(delta)
             self.left_sweep_two_sites(delta)
+        self.psi.update_bonds_infos()
             
             
 def apply_Heff_single_site(L,H,R,M):
