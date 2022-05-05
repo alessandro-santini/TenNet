@@ -17,9 +17,9 @@ def contract_right(A,W,B,R):
            |
            g
     B : tensor
-              g
-              |
-           f--B--h
+           g
+           |
+        f--B--h
     R : tensor
         ---b
         |
@@ -41,21 +41,21 @@ def contract_left(A,W,B,L):
     """
     Parameters
     ----------
-    A : tensor
+    A : numpy.ndarray
         a--A--b
            |
            c
-    W : tensor
+    W : numpy.ndarray
            c 
            |
         d--W--e
            |
            g
-    B : tensor
-              g
-              |
-           f--B--h
-    L : tensor
+    B : numpy.ndarray
+           g
+           |
+        f--B--h
+    L : numpy.ndarray
         ---a
         |
         L--d
@@ -63,7 +63,7 @@ def contract_left(A,W,B,L):
         ---f
     Returns
     -------
-    tensor
+    numpy.ndarray
         ---A--b
         |  |  
         L--W--e
@@ -76,14 +76,14 @@ def compute_local_operator(op, psi):
     """
     Parameters
     ----------
-    op : TYPE
+    op : numpy.ndarray
         operator j--op--l with dimensions (d x d).
-    psi : TYPE
+    psi : MPS
         matrix product state.
 
     Returns
     -------
-    op_avg : TYPE
+    op_avg : numpy.ndarray
         returns the local average of op over each site. 
         
     """
