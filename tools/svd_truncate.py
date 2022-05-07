@@ -8,7 +8,10 @@ def svd_truncate(A, options={}):
     A : Tensor
         two legged M x N tensor.
     options : dict, optional
-        truncation options. The default is {}.
+       chi_min: keeps at least chi_min Schmidt Values
+       chi_max: keeps at most  chi_max Schmidt Values
+       svd_min: discard S[i] < svd_min
+       trunc_cut: discard all the S as long as \sum_j S[j]**2 < trunc_cut.
     Returns
     -------
     U : Tensor

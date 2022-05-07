@@ -1,5 +1,6 @@
 from ..tensors.MatrixProductOperators import MPO
 import numpy as np
+import opt_einsum as oe
 
 def IsingChain(L, J=1., h_z=1., h_x=0.):    
     if isinstance(J,  (int,float)):   J = J*np.ones(L)
@@ -49,3 +50,46 @@ def IsingChainWithAncilla(L, J=1., h_z=1., h_x=0.):
     for i in range(1,L-1):
         tensors[i] = Wbulk
     return MPO(L, d=4, tensors=tensors)
+
+def Hierarchical_Dyson_model(N,sigma,h,J=1):
+    L = 2**N
+    
+    # Build coupling matrix
+    real_states = [np.vectorize(np.binary_repr)(np.arange(2**N),N)][0]
+    t = np.array([2.**( - (1 + sigma)*k ) for k in np.arange(0, N) ])
+    A = np.zeros((L,L))
+    for i, state_a in enumerate(real_states):
+        for j, state_b in enumerate(real_states):
+            if i != j :
+                k = N
+                while( state_a[:k] != state_b[:k] or k < 0 ):
+                    k = k-1
+                else:
+                    A[i,j] = t[(N-k-1)]
+    A = -J*A # Ferromagnetic coupling matrix
+    
+    sigma_z = np.array([[1.,0.],[0.,-1.]])
+    sigma_x = np.array([[0.,1.],[1.,0]])
+    
+    tensors = [0]*L
+    
+    tensors[0] = np.zeros([1,L+1,2,2])
+    tensors[0][0,0,:,:]  = -h*sigma_z
+    tensors[0][0,-1,:,:] = np.eye(2)
+    tensors[0][0,1:L,:,:] = oe.contract('i,jk->ijk',A[0,1:],sigma_x)
+    
+    tensors[-1] = np.zeros([3,1,2,2])
+    tensors[-1][0,0,:,:] = np.eye(2)
+    tensors[-1][1,0,:,:] = sigma_x
+    tensors[-1][2,0,:,:] = -h*sigma_z
+    
+    for k in range(1,L-1):
+        tensors[k] = np.zeros([L+2-k, L+1-k, 2, 2])
+        tensors[k][0,0,:,:] = np.eye(2); tensors[k][-1,-1,:,:] = np.eye(2)
+        tensors[k][1,0,:,:] = sigma_x; tensors[k][-1,0,:,:] = -h*sigma_z
+        for i in range(1,L-k):
+            tensors[k][i+1,i] = np.eye(2)
+            if k+i<L:
+                tensors[k][-1,i,:,:] = A[k,k+i]*sigma_x
+    return MPO(L,tensors=tensors)
+    

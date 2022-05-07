@@ -50,7 +50,7 @@ class TDVP:
             self.L_env[i] = contract.contract_left(self.psi.tensors[i], self.H.tensors[i], self.psi.tensors[i], self.L_env[i-1])
             if i != self.L-1:
                 self.psi.singular_values[i] = S
-                self.center += 1
+                self.psi.center += 1
                 C = oe.contract('i,ij->ij',S,V)
                 psi = local_exponentiation_single_site('Hfree', C, self.L_env[i],' ', self.R_env[i+1], -delta)
                 self.psi.tensors[i+1] = oe.contract('ij,jkl->ikl',psi.reshape(C.shape),self.psi.tensors[i+1])

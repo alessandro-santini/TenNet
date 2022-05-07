@@ -18,8 +18,9 @@ def Ising_ThermalState(L, K):
     tensors = [0]*L
     
     sigma_x = np.array([[0,1],[1,0]])
-    c_K =  np.cosh(K/2)/np.sqrt(2*np.cosh(K))
-    s_K = -np.sinh(K/2)/np.sqrt(2*np.cosh(K))
+    with np.errstate(over='ignore'):
+        c_K =  np.cosh(K/2)/np.sqrt(2*np.cosh(K))
+        s_K = -np.sinh(K/2)/np.sqrt(2*np.cosh(K))
     if np.isnan(c_K): c_K = 1./2
     if np.isnan(s_K): s_K = -1./2*np.sign(K)
     boundL = (np.array([np.eye(2),sigma_x])/np.sqrt(2)).reshape(1,2,2,2)
