@@ -1,8 +1,8 @@
-# Copyright 2018-2021 TeNPy Developers, GNU GPLv3
 import numpy as np
 
 def fit_with_sum_of_exp(f, n, N=50):
-    r"""Approximate a decaying function `f` with a sum of exponentials.
+    r""" -> Copyright 2018-2021 TeNPy Developers, GNU GPLv3 <-
+    Approximate a decaying function `f` with a sum of exponentials.
     MPOs can naturally represent long-range interactions with an exponential decay.
     A common technique for other (e.g. powerlaw) long-range interactions is to approximate them
     by sums of exponentials and to include them into the MPOs.
@@ -23,6 +23,7 @@ def fit_with_sum_of_exp(f, n, N=50):
         Such that :math:`f(k) \approx \sum_i x_i \lambda_i^k` for (integer) 1 <= `k` <= `N`.
         The function :func:`sum_of_exp` evaluates this for given `x`.
     """
+    
     assert n < N
     x = np.arange(1, N + 1)
     f_x = f(x)
