@@ -3,7 +3,7 @@
 </p>
 <hr>
 
-TensorNetwork package
+TensorNetwork software, package needed: h5py, opt_einsum
 
 to do: 
 
