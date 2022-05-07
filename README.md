@@ -1,4 +1,4 @@
-# TenNet
+![alt text](https://github.com/alessandro-santini/TenNet/blob/main/cover.jpg?raw=true)
 
 TensorNetwork package
 
