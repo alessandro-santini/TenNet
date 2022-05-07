@@ -14,6 +14,7 @@ class DMRG:
         self.sites = options.get('sites', 1)
         if 'trunc_cut' not in self.options.keys(): self.options.update({'trunc_cut':1e-10})
         if 'chi_init' not in self.options.keys(): self.options.update({'chi_init':64})
+        if 'krydim'   not in self.options.keys(): self.options.update({'krydim':10})
         self.initialize()
         
     def initialize(self):
@@ -54,7 +55,7 @@ class DMRG:
         for i in range(self.L-1):
             assert self.psi.center == i
             shp = self.psi.tensors[i].shape
-            psi, e = local_minimization_single_site(self.psi.tensors[i], self.L_env[i-1], self.H.tensors[i], self.R_env[i+1])
+            psi, e = local_minimization_single_site(self.psi.tensors[i], self.L_env[i-1], self.H.tensors[i], self.R_env[i+1], self.options['krydim'])
             self.psi.tensors[i] = psi.reshape(shp); self.energy = e
             self.psi.move_center_one_step(i,direction='right')
             self.L_env[i] = contract.contract_left(self.psi.tensors[i], self.H.tensors[i], self.psi.tensors[i], self.L_env[i-1])
@@ -62,7 +63,7 @@ class DMRG:
         for i in range(self.L-1,0,-1):
             assert self.psi.center == i
             shp = self.psi.tensors[i].shape
-            psi, e = local_minimization_single_site(self.psi.tensors[i], self.L_env[i-1], self.H.tensors[i], self.R_env[i+1])
+            psi, e = local_minimization_single_site(self.psi.tensors[i], self.L_env[i-1], self.H.tensors[i], self.R_env[i+1], self.options['krydim'])
             self.psi.tensors[i] = psi.reshape(shp); self.energy = e
             self.psi.move_center_one_step(i, direction='left')
             self.R_env[i] = contract.contract_right(self.psi.tensors[i], self.H.tensors[i], self.psi.tensors[i], self.R_env[i+1])
@@ -74,7 +75,7 @@ class DMRG:
             assert self.psi.center == i
             M12  = oe.contract('ijk,klm->ijlm', self.psi.tensors[i], self.psi.tensors[i+1])
             shp1 = self.psi.tensors[i].shape; shp2 = self.psi.tensors[i+1].shape
-            psi, e = local_minimization_two_sites(M12, self.L_env[i-1], self.H12[i], self.R_env[i+2])
+            psi, e = local_minimization_two_sites(M12, self.L_env[i-1], self.H12[i], self.R_env[i+2], self.options['krydim'])
             (U,S,V), err = svd_truncate(psi.reshape(shp1[0]*shp1[1],shp2[1]*shp2[2]),self.options)
             self.truncation_err[i] = max(err,self.truncation_err[i])
             self.energy = e
@@ -91,7 +92,7 @@ class DMRG:
             M12  = oe.contract('ijk,klm->ijlm', self.psi.tensors[i-1], self.psi.tensors[i])
             shp1 = self.psi.tensors[i-1].shape; shp2 = self.psi.tensors[i].shape
             
-            psi, e = local_minimization_two_sites(M12, self.L_env[i-2], self.H12[i-1], self.R_env[i+1])
+            psi, e = local_minimization_two_sites(M12, self.L_env[i-2], self.H12[i-1], self.R_env[i+1], self.options['krydim'])
             (U,S,V), err = svd_truncate(psi.reshape(shp1[0]*shp1[1],shp2[1]*shp2[2]),self.options)
             self.truncation_err[i-1] = max(err,self.truncation_err[i-1])
             self.energy = e

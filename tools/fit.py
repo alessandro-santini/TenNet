@@ -1,3 +1,4 @@
+# Copyright 2018-2021 TeNPy Developers, GNU GPLv3
 import numpy as np
 
 def fit_with_sum_of_exp(f, n, N=50):
@@ -39,3 +40,5 @@ def fit_with_sum_of_exp(f, n, N=50):
     W = np.power.outer(lam, x).T
     pref, res, rank, s = np.linalg.lstsq(W, f_x, None)
     return lam, pref
+
+
