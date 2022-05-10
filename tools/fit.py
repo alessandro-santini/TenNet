@@ -23,7 +23,6 @@ def fit_with_sum_of_exp(f, n, N=50):
         Such that :math:`f(k) \approx \sum_i x_i \lambda_i^k` for (integer) 1 <= `k` <= `N`.
         The function :func:`sum_of_exp` evaluates this for given `x`.
     """
-    
     assert n < N
     x = np.arange(1, N + 1)
     f_x = f(x)
