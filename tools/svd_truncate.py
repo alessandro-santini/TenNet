@@ -12,7 +12,7 @@ def svd_truncate(A, options={}):
        chi_max: keeps at most  chi_max Schmidt Values
        svd_min: discard S[i] < svd_min
        trunc_cut: discard all the S as long as \sum_j S[j]**2 < trunc_cut.
-    Returns
+    Returns (U,S,V), err
     -------
     U : Tensor
         shape, M x new_chi.
@@ -20,6 +20,8 @@ def svd_truncate(A, options={}):
         shape, new_chi.
     V : Tensor
         shape, new_chi x N.
+    err: 
+        truncation error
     """
     try:
         U, S, V = np.linalg.svd(A,full_matrices=False)
