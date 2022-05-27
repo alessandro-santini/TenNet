@@ -13,6 +13,19 @@ def all_down(L):
     psi.center = 0
     return psi
 
+def all_up_along_x(L):
+    tensors = [1/np.sqrt(2)*np.array([1.,1.]).reshape(1,2,1)]*L
+    psi =  MPS(L,tensors = tensors)
+    psi.center = 0
+    return psi
+
+def all_down_along_x(L):
+    tensors = [1/np.sqrt(2)*np.array([1.,-1.]).reshape(1,2,1)]*L
+    psi =  MPS(L,tensors = tensors)
+    psi.center = 0
+    return psi
+
+
 def Neel(L):
     tensors = [np.array([1.,0.]).reshape(1,2,1),np.array([0.,1.]).reshape(1,2,1)]*(L//2)
     psi =  MPS(L,tensors = tensors)
