@@ -44,7 +44,7 @@ class iTEBD:
     
     def compute_corr(self,r,opi,opj=None):
         corr = np.zeros(r)
-        if opj == None:
+        if opj is None:
             opj = opi
         corr[0] = self.compute_local_observable(opi@opj)
         L = oe.contract('a,abc,ade,bd->ce',self.Sv**2,self.B1,self.B1.conj(),opi)
@@ -56,6 +56,11 @@ class iTEBD:
                 corr[j] = oe.contract('ab,acd,bed,ce',L,self.B2,self.B2.conj(),opj).item().real
                 L = oe.contract('ab,acd,bcf->df',L,self.B2,self.B2.conj())
         return corr
-            
-            
+    
+    def compute_connected_corr(self,r,opi,opj=None):
+        if opj is None:
+            opj = opi
+        return self.compute_corr(r, opi, opj)-self.compute_local_observable(opi)*self.compute_local_observable(opj)
+        
+        
         
