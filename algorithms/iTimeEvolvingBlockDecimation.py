@@ -8,19 +8,38 @@ class iTEBD:
         self.B1, self.B2= B1.copy(), B2.copy()
         self.Sv = Sv.copy()
         self.d = d
+        self.Hmat = H.copy()
         self.H = H.reshape(d,d,d,d)
-        self.U = expm(-1j*H*dt).reshape(d,d,d,d).transpose(2,3,0,1)
         self.options = options
+        if 'order'     not in self.options.keys(): self.options.update({'order':1})
         if 'trunc_cut' not in self.options.keys(): self.options.update({'trunc_cut':1e-10})
         if 'chi_max'   not in self.options.keys(): self.options.update({'chi_max':128})
         if 'svd_min'   not in self.options.keys(): self.options.update({'svd_min':1e-10})
+        self.set_U(dt,order=options['order'])        
         self.truncation_err = 0.
         self.initial_energy = self.compute_energy()
         
+    def set_U(self,dt,order=1):
+        d = self.d
+        H = self.Hmat
+        self.U = []
+        if order == 1:
+            self.U.append(expm(-1j*H*dt).reshape(d,d,d,d).transpose(2,3,0,1))
+            self.U.append(expm(-1j*H*dt).reshape(d,d,d,d).transpose(2,3,0,1))
+        if order == 2:
+            self.U.append(expm(-1j*H*dt/2).reshape(d,d,d,d).transpose(2,3,0,1))
+            self.U.append(expm(-1j*H*dt).reshape(d,d,d,d).transpose(2,3,0,1))
+            self.U.append(expm(-1j*H*dt/2).reshape(d,d,d,d).transpose(2,3,0,1))
+        if order == 4:
+            tau1 = 1./(4.-4.**(1./3.))*dt; tau2=tau1;
+            tau3 = dt-2*tau1-2*tau2
+            for tau in [tau1/2,tau1,(tau1+tau2)/2,tau2,(tau2+tau3)/2,tau3,tau3/2 ]:
+                self.U.append(expm(-1j*H*tau/2).reshape(d,d,d,d).transpose(2,3,0,1))
+        
     def time_step(self):
-        for _ in range(2):
+        for K in self.U:
             shp1,shp2 = self.B1.shape,self.B2.shape
-            theta = oe.contract('a,abc,cde,bdfg->afge',self.Sv,self.B1,self.B2,self.U)
+            theta = oe.contract('a,abc,cde,bdfg->afge',self.Sv,self.B1,self.B2, K)
             theta = theta.reshape(shp1[0]*shp1[1],shp2[1]*shp2[2])
             (U,S,V), err = svd_truncate(theta,self.options)
             U, V = U.reshape(shp1[0],shp1[1],S.size), V.reshape(S.size,shp2[1],shp2[2])
