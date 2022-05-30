@@ -3,6 +3,7 @@ import opt_einsum as oe
 from ..tools.svd_truncate import svd_truncate
 from scipy.sparse.linalg import expm
 
+
 class iTEBD:
     def __init__(self, Sv, B1, B2, H, dt, d=2, options={}):
         self.B1, self.B2= B1.copy(), B2.copy()
@@ -62,24 +63,32 @@ class iTEBD:
         return np.abs(self.compute_energy()-self.initial_energy)
     
     def compute_corr(self,r,opi,opj=None):
-        corr = np.zeros(r)
+        corr = np.zeros(r,complex)
         if opj is None:
             opj = opi
         corr[0] = self.compute_local_observable(opi@opj)
         L = oe.contract('a,abc,ade,bd->ce',self.Sv**2,self.B1,self.B1.conj(),opi)
         for j in range(1,r):
             if j % 2 == 0:
-                corr[j] = oe.contract('ab,acd,bed,ce',L,self.B1,self.B1.conj(),opj).item().real
+                corr[j] = oe.contract('ab,acd,bed,ce',L,self.B1,self.B1.conj(),opj).item()
                 L = oe.contract('ab,acd,bcf->df',L,self.B1,self.B1.conj())
             else:
-                corr[j] = oe.contract('ab,acd,bed,ce',L,self.B2,self.B2.conj(),opj).item().real
+                corr[j] = oe.contract('ab,acd,bed,ce',L,self.B2,self.B2.conj(),opj).item()
                 L = oe.contract('ab,acd,bcf->df',L,self.B2,self.B2.conj())
-        return corr
+        return np.real_if_close(corr)
     
     def compute_connected_corr(self,r,opi,opj=None):
         if opj is None:
             opj = opi
         return self.compute_corr(r, opi, opj)-self.compute_local_observable(opi)*self.compute_local_observable(opj)
         
-        
-        
+    def save_hdf5(self, file_pointer,subgroup):
+        file_pointer.create_group(subgroup)
+        file_pointer.create_dataset(subgroup+'/Sv', shape=self.Sv.shape, data=self.Sv,compression='gzip',compression_opts=9)
+        file_pointer.create_dataset(subgroup+'/B1', shape=self.B1.shape, data=self.B1,compression='gzip',compression_opts=9)
+        file_pointer.create_dataset(subgroup+'/B2', shape=self.B2.shape, data=self.B2,compression='gzip',compression_opts=9)
+    def load_hdf5(self, file_pointer, subgroup):
+        self.Sv = file_pointer[subgroup+'/Sv'][...].copy()
+        self.B1 = file_pointer[subgroup+'/B1'][...].copy()
+        self.B2 = file_pointer[subgroup+'/B2'][...].copy()
+            
