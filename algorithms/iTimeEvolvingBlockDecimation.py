@@ -3,12 +3,27 @@ import opt_einsum as oe
 from ..tools.svd_truncate import svd_truncate
 from scipy.sparse.linalg import expm
 
+import copy
 
 class iTEBD:
-    def __init__(self, Sv, B1, B2, H, dt, d=2, options={}):
-        self.B1, self.B2= B1.copy(), B2.copy()
-        self.Sv = Sv.copy()
+    def __init__(self, psi, H, dt, d=2, options={}):
+        """
+        Parameters
+        ----------
+        psi : iMPS
+            state as an infinite MPS.
+        H : np.ndarray
+            two-body interaction.
+        dt : float
+            time_step.
+        d : int, optional
+            local space dimension. The default is 2.
+        options : dict, optional
+            svd_truncate options. The default is {}.
+        """
+        assert psi.d == d
         self.d = d
+        self.psi = copy.deepcopy( psi )
         self.Hmat = H.copy()
         self.H = H.reshape(d,d,d,d)
         self.options = options
@@ -39,56 +54,21 @@ class iTEBD:
         
     def time_step(self):
         for K in self.U:
-            shp1,shp2 = self.B1.shape,self.B2.shape
-            theta = oe.contract('a,abc,cde,bdfg->afge',self.Sv,self.B1,self.B2, K)
+            shp1,shp2 = self.psi.B1.shape,self.psi.B2.shape
+            theta = oe.contract('a,abc,cde,bdfg->afge',self.psi.Sv,self.psi.B1,self.psi.B2, K)
             theta = theta.reshape(shp1[0]*shp1[1],shp2[1]*shp2[2])
             (U,S,V), err = svd_truncate(theta,self.options)
             U, V = U.reshape(shp1[0],shp1[1],S.size), V.reshape(S.size,shp2[1],shp2[2])
             self.truncation_err = max(err,self.truncation_err)
-            self.B2 = V
-            self.B1 = oe.contract('i,ijk,k->ijk',1./self.Sv,U,S)
-            self.Sv, self.B1, self.B2 = S, self.B2, self.B1
+            self.psi.B2 = V
+            self.psi.B1 = oe.contract('i,ijk,k->ijk',1./self.psi.Sv,U,S)
+            self.psi.Sv, self.psi.B1, self.psi.B2 = S, self.psi.B2, self.psi.B1
             
     def err_normalization(self):
-        self.norm = oe.contract('i,ijk,klm,ijn,nlm',self.Sv**2,self.B1,self.B2,self.B1.conj(),self.B2.conj())
-        return np.abs(self.norm-1)
-    
-    def compute_local_observable(self,op):
-        return oe.contract('i,ijk,ilk,jl',self.Sv**2,self.B1,self.B1.conj(),op).item().real
+        return np.abs(self.psi.compute_norm()-1)
     
     def compute_energy(self):
-        return oe.contract('a,abc,cde,afg,ghe,bdfh',self.Sv**2,self.B1,self.B2,self.B1.conj(),self.B2.conj(),self.H).item().real
+        return self.psi.compute_two_body_observable(self.H)
     
     def err_energy(self):
         return np.abs(self.compute_energy()-self.initial_energy)
-    
-    def compute_corr(self,r,opi,opj=None):
-        corr = np.zeros(r,complex)
-        if opj is None:
-            opj = opi
-        corr[0] = self.compute_local_observable(opi@opj)
-        L = oe.contract('a,abc,ade,bd->ce',self.Sv**2,self.B1,self.B1.conj(),opi)
-        for j in range(1,r):
-            if j % 2 == 0:
-                corr[j] = oe.contract('ab,acd,bed,ce',L,self.B1,self.B1.conj(),opj).item()
-                L = oe.contract('ab,acd,bcf->df',L,self.B1,self.B1.conj())
-            else:
-                corr[j] = oe.contract('ab,acd,bed,ce',L,self.B2,self.B2.conj(),opj).item()
-                L = oe.contract('ab,acd,bcf->df',L,self.B2,self.B2.conj())
-        return np.real_if_close(corr)
-    
-    def compute_connected_corr(self,r,opi,opj=None):
-        if opj is None:
-            opj = opi
-        return self.compute_corr(r, opi, opj)-self.compute_local_observable(opi)*self.compute_local_observable(opj)
-        
-    def save_hdf5(self, file_pointer,subgroup):
-        file_pointer.create_group(subgroup)
-        file_pointer.create_dataset(subgroup+'/Sv', shape=self.Sv.shape, data=self.Sv,compression='gzip',compression_opts=9)
-        file_pointer.create_dataset(subgroup+'/B1', shape=self.B1.shape, data=self.B1,compression='gzip',compression_opts=9)
-        file_pointer.create_dataset(subgroup+'/B2', shape=self.B2.shape, data=self.B2,compression='gzip',compression_opts=9)
-    def load_hdf5(self, file_pointer, subgroup):
-        self.Sv = file_pointer[subgroup+'/Sv'][...].copy()
-        self.B1 = file_pointer[subgroup+'/B1'][...].copy()
-        self.B2 = file_pointer[subgroup+'/B2'][...].copy()
-            
