@@ -55,7 +55,7 @@ class iMPS:
         self.compute_transfer_matrix()
         eig =np.sort(  np.abs(eigs(self.T, k=6, ncv=300, which='LM',return_eigenvectors=False)) )[::-1]
         self.Teig = eig
-        return -2./np.log(eig[1])
+        return (-2./np.log(eig[1]),-2./np.log(eig[2]))
         
     def compute_long_distance_observable_degenerate(self,op):
         self.compute_transfer_matrix()
