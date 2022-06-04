@@ -57,7 +57,7 @@ class iTEBD:
             shp1,shp2 = self.psi.B1.shape,self.psi.B2.shape
             theta = oe.contract('a,abc,cde,bdfg->afge',self.psi.Sv,self.psi.B1,self.psi.B2, K)
             theta = theta.reshape(shp1[0]*shp1[1],shp2[1]*shp2[2])
-            (U,S,V), err = svd_truncate(theta,self.options)
+            (U, S, V), err = svd_truncate(theta,self.options)
             U, V = U.reshape(shp1[0],shp1[1],S.size), V.reshape(S.size,shp2[1],shp2[2])
             self.truncation_err = max(err,self.truncation_err)
             self.psi.B2 = V
