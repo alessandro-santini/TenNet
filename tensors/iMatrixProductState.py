@@ -50,10 +50,12 @@ class iMPS:
         T   = oe.contract('abe,ehf,cbd,dhg->acfg',self.B1,self.B2,self.B1.conj(),self.B2.conj())
         self.Tnot_reshaped = T.copy()
         self.T = T.reshape(shp1[0]**2,shp1[0]**2)    
+        
     def compute_corr_length(self):
         self.compute_transfer_matrix()
-        eigs = np.sort(np.abs(np.linalg.eigvals(self.T)))[::-1]
-        return -2./np.log(eigs[1])
+        eig =np.sort(  np.abs(eigs(self.T, k=6, ncv=300, which='LM',return_eigenvectors=False)) )[::-1]
+        self.Teig = eig
+        return -2./np.log(eig[1])
         
     def compute_long_distance_observable_degenerate(self,op):
         self.compute_transfer_matrix()
