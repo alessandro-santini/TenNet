@@ -1,5 +1,7 @@
 import numpy as np
+import opt_einsum as oe
 from ..tensors.MatrixProductState import MPS
+from ..tensors.iMatrixProductState import iMPS
 
 def Ising_ThermalState(L, K):
     """
@@ -37,3 +39,12 @@ def Ising_ThermalState(L, K):
     rho_t = MPS(L,d=4,tensors=tensors)
     rho_t.right_normalize()
     return rho_t
+
+def iMPSstate(K):
+    B = Ising_ThermalState(3, K).tensors[1]
+    theta = oe.contract('abc,cde->abde',B,B).reshape(8,8)
+    Sb = np.linalg.svd(theta,compute_uv=False)[:2]
+    Sb /= np.linalg.norm(Sb)
+    return iMPS(Sb,B,B,d=4)
+    
+    

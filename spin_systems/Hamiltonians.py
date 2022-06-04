@@ -92,4 +92,3 @@ def Hierarchical_Dyson_model(N,sigma,h,J=1):
             if k+i<L:
                 tensors[k][-1,i,:,:] = A[k,k+i]*sigma_x
     return MPO(L,tensors=tensors)
-    
