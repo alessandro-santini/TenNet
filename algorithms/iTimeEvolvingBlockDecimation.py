@@ -42,15 +42,23 @@ class iTEBD:
         if order == 1:
             self.U.append(expm(-1j*H*dt).reshape(d,d,d,d).transpose(2,3,0,1))
             self.U.append(expm(-1j*H*dt).reshape(d,d,d,d).transpose(2,3,0,1))
-        if order == 2:
+        elif order == 2:
             self.U.append(expm(-1j*H*dt/2).reshape(d,d,d,d).transpose(2,3,0,1))
             self.U.append(expm(-1j*H*dt).reshape(d,d,d,d).transpose(2,3,0,1))
             self.U.append(expm(-1j*H*dt/2).reshape(d,d,d,d).transpose(2,3,0,1))
-        if order == 4:
+        elif order == 3:
+            c_trot = np.zeros(3)
+            d_trot = np.zeros(3)
+            c_trot[0] = 1; c_trot[1] = -2/3; c_trot[2] = 2/3
+            d_trot[0] = -1/24; d_trot[1] = 3/4; d_trot[2] = 7/24
+            for i in range(3):
+                self.U.append(expm(-1j*H*c_trot[i]*dt).reshape(d,d,d,d).transpose(2,3,0,1))
+                self.U.append(expm(-1j*H*d_trot[i]*dt).reshape(d,d,d,d).transpose(2,3,0,1))
+        elif order == 4:
             tau1 = 1./(4.-4.**(1./3.))*dt; tau2=tau1;
             tau3 = dt-2*tau1-2*tau2
-            for tau in [tau1/2,tau1,(tau1+tau2)/2,tau2,(tau2+tau3)/2,tau3,tau3/2 ]:
-                self.U.append(expm(-1j*H*tau/2).reshape(d,d,d,d).transpose(2,3,0,1))
+            for tau in [tau1/2,tau1,(tau1+tau2)/2,tau2,(tau2+tau3)/2,tau3,(tau2+tau3)/2,tau2,(tau1+tau2)/2,tau1,tau1/2]:
+                self.U.append(expm(-1j*H*tau).reshape(d,d,d,d).transpose(2,3,0,1))
         
     def time_step(self):
         for K in self.U:
@@ -63,7 +71,7 @@ class iTEBD:
             self.psi.B2 = V
             self.psi.B1 = oe.contract('i,ijk,k->ijk',1./self.psi.Sv,U,S)
             self.psi.Sv, self.psi.B1, self.psi.B2 = S, self.psi.B2, self.psi.B1
-            
+         
     def err_normalization(self):
         return np.abs(self.psi.compute_norm()-1)
     
