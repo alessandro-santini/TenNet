@@ -41,10 +41,11 @@ def Ising_ThermalState(L, K):
     return rho_t
 
 def iMPSstate(K):
-    B = Ising_ThermalState(3, K).tensors[1]
-    theta = oe.contract('abc,cde->abde',B,B).reshape(8,8)
-    Sb = np.linalg.svd(theta,compute_uv=False)[:2]
-    Sb /= np.linalg.norm(Sb)
-    return iMPS(Sb,B,B,d=4)
-    
-    
+    K = K/2
+    alpha = np.cosh(K)/np.sqrt(2*np.cosh(2*K))
+    beta = np.sinh(K)/np.sqrt(2*np.cosh(2*K))
+    id2 = np.eye(2)
+    sx = np.array([[0,1],[1,0]])
+    B = np.array([[alpha*id2,beta*sx],[-alpha*sx,-beta*id2]]).reshape(2,2,4).transpose(0,2,1)
+    Sb =  np.array([1.,np.abs(np.tanh(K))])/np.sqrt(1+np.tanh(K)**2)
+    return iMPS(Sb, B, B, d=4)
