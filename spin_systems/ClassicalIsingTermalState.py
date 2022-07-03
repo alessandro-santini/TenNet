@@ -42,8 +42,13 @@ def Ising_ThermalState(L, K):
 
 def iMPSstate(K):
     K = K/2
-    alpha = np.cosh(K)/np.sqrt(2*np.cosh(2*K))
-    beta = np.sinh(K)/np.sqrt(2*np.cosh(2*K))
+    
+    with np.errstate(over='ignore'):
+        alpha = np.cosh(K)/np.sqrt(2*np.cosh(2*K))
+        beta  = np.sinh(K)/np.sqrt(2*np.cosh(2*K))
+    if np.isnan(alpha): alpha  = 1./2
+    if np.isnan(beta):  beta   = 1./2*np.sign(K)
+    
     id2 = np.eye(2)
     sx = np.array([[0,1],[1,0]])
     B = np.array([[alpha*id2,beta*sx],[-alpha*sx,-beta*id2]]).reshape(2,2,4).transpose(0,2,1)
