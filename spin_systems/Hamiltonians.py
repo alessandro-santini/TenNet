@@ -92,3 +92,69 @@ def Hierarchical_Dyson_model(N,sigma,h,J=1):
             if k+i<L:
                 tensors[k][-1,i,:,:] = A[k,k+i]*sigma_x
     return MPO(L,tensors=tensors)
+
+
+########################
+###### 2D Systems ######
+########################
+def IsingMPO2D(J, h_z, h_x, config):
+    N = config.size
+    L = config.shape[0]
+    
+    if isinstance(h_x,(int,float)): h_x = h_x*np.ones(N)
+    if isinstance(h_z,(int,float)): h_z = h_z*np.ones(N)
+    
+    def compute_dim_MPO(L):
+        dim = []
+        nearest = []
+        for x in range(L*L):
+            i,j = np.where(config == x)
+            i = i[0]; j = j[0]
+            nn = []
+            if i !=0: nn.append(config[i-1,j])
+            if j !=0: nn.append(config[i,j-1])
+            if i !=L-1: nn.append(config[i+1,j])
+            if j !=L-1: nn.append(config[i,j+1])
+            nn = np.array(nn)
+            nearest.append( np.array(nn[nn>config[i,j]]-config[i,j],int))
+            new_dim = int(np.max(nn-config[i,j]) + 2)
+            if x > 0:
+                if new_dim < dim[x-1][1]:
+                   dim.append((dim[x-1][1],dim[x-1][1]-1,2,2))
+                else:
+                    dim.append((dim[x-1][1],new_dim,2,2))
+            else:
+                dim.append((1,new_dim,2,2))
+        dim[-1] = (dim[-2][1],1,2,2)
+        return dim, nearest
+    
+    sigma_z = np.array([[1.,0.],[0.,-1.]])
+    sigma_x = np.array([[0.,1.],[1.,0]])
+    
+    dimW, nn = compute_dim_MPO(L)
+    
+    tensors = [0]*N
+    for i,dim in enumerate(dimW):
+        tensors[i] = np.zeros(dim)
+    
+    tensors[0][0,0,:,:] = -h_z[0]*sigma_z -h_x[0]*sigma_x
+    for k in nn[0]:
+        tensors[0][0,k,:,:] = -J*sigma_x
+    tensors[0][0,-1,:,:] = np.eye(2)
+    
+    tensors[-1][0,0,:,:] = np.eye(2)
+    tensors[-1][1,0,:,:] = sigma_x
+    tensors[-1][2,0,:,:] = -h_z[-1]*sigma_z - h_x[-1]*sigma_x
+    
+    for i in range(1,N-1):
+        tensors[i][0,0,:,:]   = np.eye(2)
+        tensors[i][-1,-1,:,:] = np.eye(2)
+        tensors[i][-1,0,:,:]  = -h_z[i]*sigma_z - h_x[i]*sigma_x
+        tensors[i][1,0,:,:]   = sigma_x
+        for k in nn[i]:
+            tensors[i][-1,k,:,:] = -J*sigma_x
+        for k in range(2,tensors[i].shape[0]-1):
+            tensors[i][k,k-1,:,:] = np.eye(2)
+    H =  MPO(N,tensors=tensors)
+    H.config = config.copy()
+    return H
