@@ -1,4 +1,0 @@
-TenNet.egg-info/PKG-INFO
-TenNet.egg-info/SOURCES.txt
-TenNet.egg-info/dependency_links.txt
-TenNet.egg-info/top_level.txt

@@ -1,4 +1,0 @@
-%%python ../setup.py sdist
-%pip install -e .
-#%%
-%%python -m twine upload dist/TenNet-0.1.1.tar.gz -u alessandro-santini -p 31eqDAcz
