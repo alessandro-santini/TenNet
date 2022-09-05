@@ -1,6 +1,3 @@
-LICENSE
-README.md
-setup.py
 TenNet.egg-info/PKG-INFO
 TenNet.egg-info/SOURCES.txt
 TenNet.egg-info/dependency_links.txt
