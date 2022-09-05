@@ -13,6 +13,4 @@ to do:
 4. something for fermions
 5. TDVP support for MPDO
 
-
-
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6797865.svg)](https://doi.org/10.5281/zenodo.6797865)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6797864.svg)](https://doi.org/10.5281/zenodo.6797864)
