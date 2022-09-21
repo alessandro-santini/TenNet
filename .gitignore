@@ -1,1 +1,2 @@
 *.build_distribution
+.gitignore

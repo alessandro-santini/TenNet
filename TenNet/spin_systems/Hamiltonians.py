@@ -40,9 +40,9 @@ def IsingChainWithAncilla(L, J=1., h_z=1., h_x=0.):
     Wbulk[0,0,:,:] = np.eye(4)
     Wbulk[1,0,:,:] = Xsys
     Wbulk[2,0,:,:] = Xanc
-    Wbulk[3,0,:,:] = -h_x*(Xsys+Xanc)-h_z*(Zsys+Zanc)
+    Wbulk[3,0,:,:] = -h_x*(Xsys-Xanc)-h_z*(Zsys-Zanc)
     Wbulk[3,1,:,:] = -J*Xsys
-    Wbulk[3,2,:,:] = -J*Xanc
+    Wbulk[3,2,:,:] = J*Xanc
     Wbulk[3,3,:,:] = np.eye(4)
     
     tensors[0]  = (Wbulk[-1,:,:,:].copy()).reshape(1,4,4,4)
